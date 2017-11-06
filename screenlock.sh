@@ -75,12 +75,12 @@ curr_active_window() {
 }
 
 isFullScreen() {
-    screen_width=`xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $1}'`
-    screen_height=`xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $2}'`
+    screen_width=$(xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $1}')
+    screen_height=$(xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $2}')
 
     curr_active_window
-    app_width=`xwininfo -id $active_window_id | egrep 'Width:' | awk '{print $NF}'`
-    app_height=`xwininfo -id $active_window_id | egrep 'Height:' | awk '{print $NF}'`
+    app_width=$(xwininfo -id $active_window_id | egrep 'Width:' | awk '{print $NF}')
+    app_height=$(xwininfo -id $active_window_id | egrep 'Height:' | awk '{print $NF}')
 
     if [ "$screen_width" = "$app_width" ] && [ "$screen_height" = "$app_height" ] ; then
         fullscreen=true
@@ -101,7 +101,7 @@ if [ "$fullscreen" = "true" ] ; then
     echo "Inhibiting screen dimming and lock"
 else
     dim-screen
-    if [ "$connection" = $HOME_SSID ] ; then
+    if [ "$connection" = "$HOME_SSID" ] ; then
         simple-lock
     else
         passwd-lock
