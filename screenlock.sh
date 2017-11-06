@@ -67,7 +67,6 @@ brighten-screen() {
             xbacklight -set $prevBrightness -time 1000 -steps 1000
             exit
         fi
-        :
     done
 }
 
@@ -84,9 +83,9 @@ isFullScreen() {
     app_height=`xwininfo -id $active_window_id | egrep 'Height:' | awk '{print $NF}'`
 
     if [ "$screen_width" = "$app_width" ] && [ "$screen_height" = "$app_height" ] ; then
-        return 1
+        fullscreen=true
     else
-        return 0
+        fullscreen=false
     fi
 } 
 
@@ -97,7 +96,8 @@ dim-screen() {
     brighten-screen
 }
 
-if isFullScreen ; then
+isFullScreen
+if [ "$fullscreen" = "true" ] ; then
     echo "Inhibiting screen dimming and lock"
 else
     dim-screen
