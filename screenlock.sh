@@ -2,20 +2,22 @@
 
 # Author: Hafiz Shafruddin
 # Date: Nov 2017
-# Version: 1.0
+# Version: 1.1
 
 # Description
 #
-# Dims the screen after a period of time. Then decides to lock the screen if
+# Any full screen application inhibits screen dimming and locking.
+# Else, dims the screen after a period of time. Then decides to lock the screen if
 # laptop is not at home's wifi.
 # Moving the mouse durng this dimming period cancels screen locking.
 # Screen brightness is restored immediately after screen lock.
 
+
 # Motivation
 #
 # i3lock simply locks the screen immediately. I would like the screen to dim 
-# before running any locker screen so that I can cancel the locking by moving 
-# the mouse.
+# before running any screen locker/saver so that I can cancel the locking by 
+# moving the mouse.
 
 # Usage
 #
@@ -27,18 +29,16 @@
 # - i3lock
 # - xdotool
 # - xbacklight
+# - xrandr
+# - xwininfo
 # - network-manager (for nmcli)
 
-# TODO
-#
-# [ ] do not dim/lock if flash plugin container is active
-# [ ] do not dim/lock if video is playing
 
 # Customize these:
 CONN_INTERFACE=wlp2s0   # Your network interface
-HOME_SSID=$HOME_SSID
+HOME_SSID=$HOMESSID     # Replace/export this with your SSID
 WAIT_BEFORE_LOCK=30     # How long (seconds) to dim the screen before locking
-DIM_TO=5                # The brightness to dim to
+DIM_TO=5                # The brightness (percentage) to dim to
 
 #=====================
 # DO NOT MODIFY BELOW
@@ -71,6 +71,25 @@ brighten-screen() {
     done
 }
 
+curr_active_window() {
+    active_window_id=`DISPLAY=:0 xprop -root _NET_ACTIVE_WINDOW | awk '{print $5}'`
+}
+
+isFullScreen() {
+    screen_width=`xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $1}'`
+    screen_height=`xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $2}'`
+
+    curr_active_window
+    app_width=`xwininfo -id $active_window_id | egrep 'Width:' | awk '{print $NF}'`
+    app_height=`xwininfo -id $active_window_id | egrep 'Height:' | awk '{print $NF}'`
+
+    if [ "$screen_width" = "$app_width" ] && [ "$screen_height" = "$app_height" ] ; then
+        return 1
+    else
+        return 0
+    fi
+} 
+
 dim-screen() {
     prevBrightness=$(xbacklight -get)
     xbacklight -set $DIM_TO -time 1000 -steps 1000
@@ -78,11 +97,14 @@ dim-screen() {
     brighten-screen
 }
 
-dim-screen
-
-if [ "$connection" = $HOME_SSID ] ; then
-    simple-lock
+if isFullScreen ; then
+    echo "Inhibiting screen dimming and lock"
 else
-    passwd-lock
-    xbacklight -set $prevBrightness -time 1000 -steps 1000
+    dim-screen
+    if [ "$connection" = $HOME_SSID ] ; then
+        simple-lock
+    else
+        passwd-lock
+        xbacklight -set $prevBrightness -time 1000 -steps 1000
+    fi
 fi
