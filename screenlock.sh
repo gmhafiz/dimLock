@@ -58,20 +58,20 @@ brighten-screen() {
     # detect for mouse movement for a period of time, and restore brightness 
     # level.
     end=$((SECONDS+$WAIT_BEFORE_LOCK))
-    while [ $SECONDS -lt $end ]; do
+    while (( $SECONDS < $end )); do
         prevX=$(xdotool getmouselocation 2>&1 | sed -rn '${s/x:([0-9]+) .*/\1 /p}')
         sleep 1
         currX=$(xdotool getmouselocation 2>&1 | sed -rn '${s/x:([0-9]+) .*/\1 /p}')
 
-        if [ $prevX -ne $currX ] ; then
-            xbacklight -set $prevBrightness -time 1000 -steps 1000
+        if (( $prevX < $currX )) ; then
+            xbacklight -set "$prevBrightness" -time 1000 -steps 1000
             exit
         fi
     done
 }
 
 curr_active_window() {
-    active_window_id=`DISPLAY=:0 xprop -root _NET_ACTIVE_WINDOW | awk '{print $5}'`
+    active_window_id=$(DISPLAY=:0 xprop -root _NET_ACTIVE_WINDOW | awk '{print$5}')
 }
 
 isFullScreen() {
@@ -79,8 +79,8 @@ isFullScreen() {
     screen_height=$(xrandr | grep '*' | awk '{print $1}' | sed 's/x/ /' | awk '{print $2}')
 
     curr_active_window
-    app_width=$(xwininfo -id $active_window_id | egrep 'Width:' | awk '{print $NF}')
-    app_height=$(xwininfo -id $active_window_id | egrep 'Height:' | awk '{print $NF}')
+    app_width=$(xwininfo -id "$active_window_id" | grep -E 'Width:' | awk '{print $NF}')
+    app_height=$(xwininfo -id "$active_window_id" | grep -E 'Height:' | awk '{print $NF}')
 
     if [ "$screen_width" = "$app_width" ] && [ "$screen_height" = "$app_height" ] ; then
         fullscreen=true
@@ -91,7 +91,7 @@ isFullScreen() {
 
 dim-screen() {
     prevBrightness=$(xbacklight -get)
-    xbacklight -set $DIM_TO -time 1000 -steps 1000
+    xbacklight -set "$DIM_TO" -time 1000 -steps 1000
 
     brighten-screen
 }
@@ -105,6 +105,6 @@ else
         simple-lock
     else
         passwd-lock
-        xbacklight -set $prevBrightness -time 1000 -steps 1000
+        xbacklight -set "$prevBrightness" -time 1000 -steps 1000
     fi
 fi
